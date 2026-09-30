@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Rnd } from "react-rnd";
 import { useAppStore } from "../store/Appstore.js";
 import { AnimatePresence, motion } from "framer-motion";
+import TrafficLights from "./TrafficLights";
 
 export default function AppWindow({ window: win }) {
   const close = useAppStore((s) => s.closeApp);
@@ -14,9 +15,16 @@ export default function AppWindow({ window: win }) {
   const [isResizing, setIsResizing] = useState(false);
   const rndRef = useRef(null);
 
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+
   // Calculate initial size and position
-  const screenWidth = globalThis.innerWidth || 1200;
-  const screenHeight = globalThis.innerHeight || 800;
+  const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1200;
+  const screenHeight = typeof window !== "undefined" ? window.innerHeight : 800;
   const isLaunchpad = win.appId === "Launchpad";
   const isMessages = win.appId === "Messages";
   const isFinder = win.appId === "Finder";
@@ -26,10 +34,15 @@ export default function AppWindow({ window: win }) {
   const isPhone = win.appId === "Phone";
   const isContacts = win.appId === "Contacts";
   const isReminders = win.appId === "Reminders";
-  const initialWidth = (isMail || isMaps || isFaceTime) ? screenWidth * 0.65 : (isMessages || isFinder || isPhone || isContacts || isReminders) ? screenWidth * 0.55 : isLaunchpad ? screenWidth * 0.45 : screenWidth * 0.7;
-  const initialHeight = (isMessages || isFinder || isMail || isMaps || isFaceTime || isPhone || isContacts || isReminders) ? screenHeight * 0.72 : isLaunchpad ? screenHeight * 0.65 : screenHeight * 0.76;
-  const initialX = Math.max(50, (screenWidth - initialWidth) / 2);
-  const initialY = Math.max(40, (screenHeight - initialHeight) / 2 - 20);
+
+  const initialWidth = isMobile
+    ? screenWidth
+    : (isMail || isMaps || isFaceTime) ? screenWidth * 0.65 : (isMessages || isFinder || isPhone || isContacts || isReminders) ? screenWidth * 0.55 : isLaunchpad ? screenWidth * 0.45 : screenWidth * 0.7;
+  const initialHeight = isMobile
+    ? Math.max(300, screenHeight - 28 - 56) // Account for TopBar (28px) and Dock (56px) on mobile
+    : (isMessages || isFinder || isMail || isMaps || isFaceTime || isPhone || isContacts || isReminders) ? screenHeight * 0.72 : isLaunchpad ? screenHeight * 0.65 : screenHeight * 0.76;
+  const initialX = isMobile ? 0 : Math.max(50, (screenWidth - initialWidth) / 2);
+  const initialY = isMobile ? 28 : Math.max(40, (screenHeight - initialHeight) / 2 - 20);
 
   // Track current size and position
   const [windowState, setWindowState] = useState({
@@ -41,6 +54,33 @@ export default function AppWindow({ window: win }) {
   
   // Store pre-maximize state
   const [preMaxState, setPreMaxState] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const mobile = window.innerWidth < 768 || (isLandscape && window.innerHeight < 550 && window.innerWidth <= 1024);
+      setIsMobile(mobile);
+      if (mobile) {
+        const topBarHeight = 28;
+        const dockHeight = window.innerHeight < 500 ? 44 : 56;
+        setWindowState({
+          x: 0,
+          y: topBarHeight,
+          width: window.innerWidth,
+          height: Math.max(220, window.innerHeight - topBarHeight - (isLandscape && window.innerHeight < 450 ? 0 : dockHeight)),
+        });
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", () => {
+      setTimeout(handleResize, 150);
+    });
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, []);
 
   const handleClose = () => {
     setIsVisible(false);
@@ -104,11 +144,12 @@ export default function AppWindow({ window: win }) {
         minWidth={300}
         minHeight={200}
         dragHandleClassName="window-drag-handle"
+        cancel=".traffic-light-btn, button, [role='button'], .no-drag, .cursor-pointer, svg, input, textarea"
         style={{ 
           zIndex: win.maximized ? 9999 : win.z,
         }}
         resizeHandleStyles={resizeHandleStyles}
-        enableResizing={!win.maximized ? {
+        enableResizing={(!win.maximized && !isMobile) ? {
           top: true,
           right: true,
           bottom: true,
@@ -124,7 +165,7 @@ export default function AppWindow({ window: win }) {
         }}
         onDragStop={(e, d) => {
           setIsDragging(false);
-          if (!win.maximized) {
+          if (!win.maximized && !isMobile) {
             setWindowState(prev => ({ ...prev, x: d.x, y: d.y }));
           }
         }}
@@ -134,7 +175,7 @@ export default function AppWindow({ window: win }) {
         }}
         onResizeStop={(e, direction, ref, delta, position) => {
           setIsResizing(false);
-          if (!win.maximized) {
+          if (!win.maximized && !isMobile) {
             setWindowState({
               width: ref.offsetWidth,
               height: ref.offsetHeight,
@@ -143,7 +184,7 @@ export default function AppWindow({ window: win }) {
             });
           }
         }}
-        disableDragging={win.maximized}
+        disableDragging={win.maximized || isMobile}
       >
         <AnimatePresence onExitComplete={handleExitComplete}>
           {isVisible && (
@@ -205,47 +246,8 @@ export default function AppWindow({ window: win }) {
                   onDoubleClick={handleMaximize}
                 >
                   {/* Traffic Light Buttons */}
-                  <div className="absolute left-4 flex items-center gap-2 group z-10">
-                    {/* Close Button */}
-                    <div
-                      className="w-3 h-3 bg-[#ff5f57] rounded-full cursor-pointer flex items-center justify-center hover:bg-[#ff4136] transition-all duration-150 shadow-sm"
-                      onClick={(e) => { e.stopPropagation(); handleClose(); }}
-                      title="Close"
-                    >
-                      <svg className="w-1.5 h-1.5 text-[#820005] opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 10 10">
-                        <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>
-                    </div>
-                    {/* Minimize Button */}
-                    <div
-                      className="w-3 h-3 bg-[#febc2e] rounded-full cursor-pointer flex items-center justify-center hover:bg-[#ff9500] transition-all duration-150 shadow-sm"
-                      onClick={(e) => { e.stopPropagation(); handleMinimize(); }}
-                      title="Minimize"
-                    >
-                      <svg className="w-1.5 h-1.5 text-[#9a6400] opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 10 10">
-                        <path d="M1 5H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>
-                    </div>
-                    {/* Maximize Button */}
-                    <div
-                      className="w-3 h-3 bg-[#28c840] rounded-full cursor-pointer flex items-center justify-center hover:bg-[#1aab29] transition-all duration-150 shadow-sm"
-                      onClick={(e) => { e.stopPropagation(); handleMaximize(); }}
-                      title={win.maximized ? "Restore" : "Maximize"}
-                    >
-                      <svg className="w-1.5 h-1.5 text-[#006500] opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 10 10">
-                        {win.maximized ? (
-                          <>
-                            <rect x="1.5" y="3.5" width="5" height="5" fill="none" stroke="currentColor" strokeWidth="1.2"/>
-                            <path d="M3.5 3.5V1.5H8.5V6.5H6.5" fill="none" stroke="currentColor" strokeWidth="1.2"/>
-                          </>
-                        ) : (
-                          <>
-                            <path d="M1 1L4 4M1 1V3.5M1 1H3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                            <path d="M9 9L6 6M9 9V6.5M9 9H6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                          </>
-                        )}
-                      </svg>
-                    </div>
+                  <div className="absolute left-4 flex items-center z-10">
+                    <TrafficLights windowId={win.id} onClose={handleClose} />
                   </div>
  
                   {/* Center Title */}

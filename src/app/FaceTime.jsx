@@ -21,57 +21,7 @@ const CustomMenuIcon = ({ size = 16, className = "" }) => (
   </svg>
 );
 
-// Traffic lights component inside FaceTime Sidebar
-const TrafficLights = ({ windowId }) => {
-  const close = useAppStore((s) => s.closeApp);
-  const minimize = useAppStore((s) => s.minimizeApp);
-  const toggleMaximize = useAppStore((s) => s.toggleMaximize);
-  const windows = useAppStore((s) => s.windows);
-  const win = windows.find(w => w.id === windowId);
-  const maximized = win ? win.maximized : false;
-
-  return (
-    <div className="flex items-center gap-2 group shrink-0">
-      <div
-        className="w-3 h-3 bg-[#ff5f57] rounded-full cursor-pointer flex items-center justify-center hover:bg-[#ff4136] transition-all duration-150 shadow-sm"
-        onClick={() => close(windowId)}
-        title="Close"
-      >
-        <svg className="w-1.5 h-1.5 text-[#820005] opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 10 10">
-          <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </div>
-      <div
-        className="w-3 h-3 bg-[#febc2e] rounded-full cursor-pointer flex items-center justify-center hover:bg-[#ff9500] transition-all duration-150 shadow-sm"
-        onClick={() => minimize(windowId)}
-        title="Minimize"
-      >
-        <svg className="w-1.5 h-1.5 text-[#9a6400] opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 10 10">
-          <path d="M1 5H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </div>
-      <div
-        className="w-3 h-3 bg-[#28c840] rounded-full cursor-pointer flex items-center justify-center hover:bg-[#1aab29] transition-all duration-150 shadow-sm"
-        onClick={() => toggleMaximize(windowId)}
-        title={maximized ? "Restore" : "Maximize"}
-      >
-        <svg className="w-1.5 h-1.5 text-[#006500] opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 10 10">
-          {maximized ? (
-            <>
-              <rect x="1.5" y="3.5" width="5" height="5" fill="none" stroke="currentColor" strokeWidth="1.2"/>
-              <path d="M3.5 3.5V1.5H8.5V6.5H6.5" fill="none" stroke="currentColor" strokeWidth="1.2"/>
-            </>
-          ) : (
-            <>
-              <path d="M1 1L4 4M1 1V3.5M1 1H3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-              <path d="M9 9L6 6M9 9V6.5M9 9H6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-            </>
-          )}
-        </svg>
-      </div>
-    </div>
-  );
-};
+import TrafficLights from "../components/TrafficLights";
 
 export default function FaceTime({ windowId }) {
   const isDarkMode = useAppStore((s) => s.isDarkMode);
@@ -215,9 +165,11 @@ export default function FaceTime({ windowId }) {
             {/* Right: Hide sidebar + New button */}
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setIsSidebarOpen(false)}
                 className={`p-1.5 rounded-lg transition flex items-center justify-center ${
                   isDarkMode ? "hover:bg-white/10 text-gray-300" : "hover:bg-black/5 text-gray-600"
                 }`}
+                title="Hide Sidebar"
               >
                 <CustomMenuIcon size={16} />
               </button>
@@ -408,12 +360,11 @@ export default function FaceTime({ windowId }) {
           )}
         </div>
 
-        {/* ── When sidebar is hidden and in a call: full in-call chrome ── */}
-        {!isSidebarOpen && activeCall && (
-          <>
-            {/* Top-left: traffic lights + caller name pill */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-              <TrafficLights windowId={windowId} />
+        {/* ── When sidebar is hidden: show traffic lights ── */}
+        {!isSidebarOpen && (
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+            <TrafficLights windowId={windowId} />
+            {activeCall && (
               <div
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-semibold transition shadow-sm ${
                   isDarkMode ? "text-white" : "text-gray-800"
@@ -436,7 +387,13 @@ export default function FaceTime({ windowId }) {
                   <path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-            </div>
+            )}
+          </div>
+        )}
+
+        {/* ── When sidebar is hidden and in a call: PiP and controls ── */}
+        {!isSidebarOpen && activeCall && (
+          <>
 
             {/* Bottom-left: PiP — active contact's memoji */}
             <div
