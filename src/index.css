@@ -23,11 +23,13 @@
   opacity: 1 !important;
 }
 
-/* Hide scrollbar for widget gallery */
-.hide-scrollbar::-webkit-scrollbar {
+/* Hide scrollbar for widget gallery & dock */
+.hide-scrollbar::-webkit-scrollbar,
+.dock-scrollbar::-webkit-scrollbar {
   display: none;
 }
-.hide-scrollbar {
+.hide-scrollbar,
+.dock-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -78,17 +80,66 @@
   background: rgba(255, 255, 255, 0.4);
 }
 
-/* macOS Style Cursor */
-* {
-  cursor: default;
+/* Ensure interactive buttons and traffic lights are always clickable and touchable */
+button, [role="button"], .cursor-pointer, svg {
+  user-select: auto;
+  -webkit-user-select: auto;
+  touch-action: manipulation;
 }
 
-a, button, [role="button"], input[type="submit"], input[type="button"], 
-.cursor-pointer, [onclick], label[for], select, summary {
-  cursor: pointer;
+/* Global Traffic Light Mobile & Touch Responsiveness */
+.traffic-lights-container,
+.group\/traffic,
+.group\/editor-traffic,
+.group\/pdf-traffic,
+.group\/trash-traffic {
+  pointer-events: auto !important;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+/* On mobile, tablet and touch screens (including horizontal/landscape orientation), traffic light glyphs stay visible and touch targets are easy to tap */
+@media (hover: none) and (pointer: coarse), (max-width: 1024px), (max-height: 600px) and (orientation: landscape) {
+  .traffic-light-btn,
+  .group .cursor-pointer.rounded-full,
+  .group\/editor-traffic .cursor-pointer.rounded-full,
+  .group\/pdf-traffic .cursor-pointer.rounded-full,
+  .group\/trash-traffic .cursor-pointer.rounded-full {
+    min-width: 14px;
+    min-height: 14px;
+    position: relative;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+
+  /* Expand tap area invisibly around small dots for seamless tapping */
+  .traffic-light-btn::after,
+  .group .cursor-pointer.rounded-full::after,
+  .group\/editor-traffic .cursor-pointer.rounded-full::after,
+  .group\/pdf-traffic .cursor-pointer.rounded-full::after,
+  .group\/trash-traffic .cursor-pointer.rounded-full::after {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+  }
+
+  /* Make close, minimize, maximize icons visible by default on mobile/tablet touch screens */
+  .traffic-light-btn svg,
+  .group .cursor-pointer.rounded-full svg,
+  .group\/editor-traffic svg,
+  .group\/pdf-traffic svg,
+  .group\/trash-traffic svg {
+    opacity: 0.85 !important;
+  }
 }
 
 input[type="text"], input[type="password"], input[type="email"], 
+
 input[type="number"], input[type="search"], input[type="url"], 
 input[type="tel"], textarea, [contenteditable="true"] {
   cursor: text;

@@ -6,57 +6,7 @@ import {
   Tent, ChevronRight
 } from "lucide-react";
 
-// Traffic lights component inside Maps Sidebar
-const TrafficLights = ({ windowId }) => {
-  const close = useAppStore((s) => s.closeApp);
-  const minimize = useAppStore((s) => s.minimizeApp);
-  const toggleMaximize = useAppStore((s) => s.toggleMaximize);
-  const windows = useAppStore((s) => s.windows);
-  const win = windows.find(w => w.id === windowId);
-  const maximized = win ? win.maximized : false;
-
-  return (
-    <div className="flex items-center gap-2 group shrink-0">
-      <div
-        className="w-3 h-3 bg-[#ff5f57] rounded-full cursor-pointer flex items-center justify-center hover:bg-[#ff4136] transition-all duration-150 shadow-sm"
-        onClick={() => close(windowId)}
-        title="Close"
-      >
-        <svg className="w-1.5 h-1.5 text-[#820005] opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 10 10">
-          <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </div>
-      <div
-        className="w-3 h-3 bg-[#febc2e] rounded-full cursor-pointer flex items-center justify-center hover:bg-[#ff9500] transition-all duration-150 shadow-sm"
-        onClick={() => minimize(windowId)}
-        title="Minimize"
-      >
-        <svg className="w-1.5 h-1.5 text-[#9a6400] opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 10 10">
-          <path d="M1 5H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </div>
-      <div
-        className="w-3 h-3 bg-[#28c840] rounded-full cursor-pointer flex items-center justify-center hover:bg-[#1aab29] transition-all duration-150 shadow-sm"
-        onClick={() => toggleMaximize(windowId)}
-        title={maximized ? "Restore" : "Maximize"}
-      >
-        <svg className="w-1.5 h-1.5 text-[#006500] opacity-0 group-hover:opacity-100 transition-opacity" viewBox="0 0 10 10">
-          {maximized ? (
-            <>
-              <rect x="1.5" y="3.5" width="5" height="5" fill="none" stroke="currentColor" strokeWidth="1.2"/>
-              <path d="M3.5 3.5V1.5H8.5V6.5H6.5" fill="none" stroke="currentColor" strokeWidth="1.2"/>
-            </>
-          ) : (
-            <>
-              <path d="M1 1L4 4M1 1V3.5M1 1H3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-              <path d="M9 9L6 6M9 9V6.5M9 9H6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-            </>
-          )}
-        </svg>
-      </div>
-    </div>
-  );
-};
+import TrafficLights from "../components/TrafficLights";
 
 export default function Maps({ windowId }) {
   const isDarkMode = useAppStore((s) => s.isDarkMode);
@@ -291,22 +241,25 @@ export default function Maps({ windowId }) {
         </aside>
       )}
 
-      {/* Toggle Sidebar Button when sidebar is hidden */}
+      {/* Toggle Sidebar Button & Traffic Lights when sidebar is hidden */}
       {!isSidebarOpen && (
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className={`absolute left-5 top-5 w-8 h-8 rounded-full z-20 flex items-center justify-center border shadow-md transition ${
-            isDarkMode 
-              ? "bg-[#1E1E1E] border-white/10 text-white hover:bg-white/[0.08]" 
-              : "bg-white border-black/5 text-gray-800 hover:bg-black/[0.04]"
-          }`}
-          title="Show Sidebar"
-        >
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="currentcolor">
-            <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
-            <line x1="5.5" y1="1.5" x2="5.5" y2="14.5" stroke="currentColor" strokeWidth="1.2"/>
-          </svg>
-        </button>
+        <div className="absolute left-5 top-5 z-20 flex items-center gap-3">
+          <TrafficLights windowId={windowId} />
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className={`w-8 h-8 rounded-full flex items-center justify-center border shadow-md transition ${
+              isDarkMode 
+                ? "bg-[#1E1E1E] border-white/10 text-white hover:bg-white/[0.08]" 
+                : "bg-white border-black/5 text-gray-800 hover:bg-black/[0.04]"
+            }`}
+            title="Show Sidebar"
+          >
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="currentcolor">
+              <rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+              <line x1="5.5" y1="1.5" x2="5.5" y2="14.5" stroke="currentColor" strokeWidth="1.2"/>
+            </svg>
+          </button>
+        </div>
       )}
 
       {/* 3. Top Center: Scale Widget */}
